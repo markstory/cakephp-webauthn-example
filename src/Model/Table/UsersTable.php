@@ -40,6 +40,10 @@ class UsersTable extends Table
         $this->setTable('users');
         $this->setDisplayField('uuid');
         $this->setPrimaryKey('id');
+
+        $this->hasMany('Passkeys', [
+            'foreignKey' => 'user_id',
+        ]);
     }
 
     /**
@@ -60,16 +64,6 @@ class UsersTable extends Table
             ->requirePresence('email', 'create')
             ->notEmptyString('email')
             ->add('email', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
-
-        $validator
-            ->scalar('display_name')
-            ->requirePresence('display_name', 'create')
-            ->notEmptyString('display_name');
-
-        $validator
-            ->scalar('passkey')
-            ->requirePresence('passkey', 'create')
-            ->notEmptyString('passkey');
 
         return $validator;
     }

@@ -6,13 +6,17 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * User Entity
+ * Passkey Entity
  *
  * @property int $id
- * @property string $uuid
- * @property string $email
+ * @property int $user_id
+ * @property string $display_name
+ * @property string $credential_id
+ * @property string $payload
+ *
+ * @property \App\Model\Entity\User $user
  */
-class User extends Entity
+class Passkey extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -24,7 +28,10 @@ class User extends Entity
      * @var array<string, bool>
      */
     protected $_accessible = [
-        'uuid' => true,
-        'email' => true,
+        'user_id' => true,
+        'display_name' => true,
+        'credential_id' => true,
+        'payload' => true,
+        'user' => true,
     ];
 }

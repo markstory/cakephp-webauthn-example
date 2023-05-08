@@ -11,22 +11,6 @@ namespace App\Controller;
  */
 class UsersController extends AppController
 {
-    public function registerStart() {
-        // Start the registration process and begin U2F challenges.
-    }
-
-    public function registerComplete() {
-        // Complete the registration process and store U2F signatures.
-    }
-
-    public function loginStart() {
-        // Start the get process and compare signatures.
-    }
-
-    public function loginComplete() {
-        // Complete the get process and compare signatures.
-    }
-
     /**
      * Index method
      *
@@ -49,7 +33,7 @@ class UsersController extends AppController
     public function view($id = null)
     {
         $user = $this->Users->get($id, [
-            'contain' => [],
+            'contain' => ['Passkeys'],
         ]);
 
         $this->set(compact('user'));
