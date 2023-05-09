@@ -3,14 +3,57 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Event\EventInterface;
+use Cake\Utility\Text;
+
 /**
  * Users Controller
  *
  * @property \App\Model\Table\UsersTable $Users
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  * @method \App\Model\Entity\User[]|\Cake\Datasource\ResultSetInterface paginate($object = null, array $settings = [])
  */
 class UsersController extends AppController
 {
+    public function initialize(): void
+    {
+        parent::initialize();
+
+        $this->addComponent('Authentication.Authentication');
+    }
+
+    public function beforeFilter(EventInterface $event)
+    {
+        parent::beforeFilter($event);
+        $this->Authentication->allowUnauthenticated([
+            'startRegister',
+            'completeRegister',
+            'startLogin',
+            'completeLogin'
+        ]);
+    }
+
+    public function startRegister()
+    {
+        if ($this->request->is('post')) {
+            /** @var \Authentication\AuthenticationService $authService */
+            $authService = $this->Authentication->getAuthenticationService();
+            $webauth = $authService->authenticators()->get('Webauthn');
+
+            // Get webauth registration/challenge data.
+            $registerData = $webauth->getRegistrationData(Text::uuid(), $this->request->getData('username'), $this->request->getData('displayName'));
+
+            // Store registration data in the session so we can use
+            // it once the user has completed their u2f prompt.
+            $this->request->getSession()->write('Registration', [
+                'username' => $this->request->getData('username'),
+                'displayName' => $this->request->getData('displayName'),
+                'challenge' => $registerData->challenge,
+            ]);
+            $this->set('registerData', $registerData);
+        }
+    }
+
     /**
      * Index method
      *
