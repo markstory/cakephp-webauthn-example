@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\CreateData;
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -91,5 +92,16 @@ class PasskeysTable extends Table
         $rules->add($rules->existsIn('user_id', 'Users'), ['errorField' => 'user_id']);
 
         return $rules;
+    }
+
+
+    public function createFromData(CreateData $data)
+    {
+        $key = $this->newEntity([
+            'display_name' => '',
+            'credential_id' => $data->payload->credentialId,
+            'payload' => json_encode($data->payload),
+        ]);
+        return $key;
     }
 }

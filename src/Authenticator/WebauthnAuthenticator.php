@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Authenticator;
 
+use App\Model\CreateData;
 use App\Model\RegistrationData;
 use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\ResultInterface;
@@ -24,6 +25,10 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         'passkeysProperty' => 'passkeys',
         // Device types you accept. Default is all current types.
         'deviceTypes' => ['usb', 'nfc', 'ble', 'hybrid'],
+        // Timeout for challenge response
+        'promptTimeout' => 20,
+        // Is user verification (pin/access code) required.
+        'requireUserVerification' => false,
     ];
 
     protected function getClient(): WebAuthn
@@ -57,7 +62,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
             \hex2bin($userId),
             $username,
             $displayName,
-            20,
+            $this->getConfig('promptTimeout'),
             $this->getConfig('requireResidentKey'),
             $this->getConfig('requireUserVerification'),
             $crossPlatform,
@@ -66,11 +71,19 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         return new RegistrationData($challengeData, $client->getChallenge());
     }
 
-    public function validateRegistration(string $clientData, string $attestation): array
+    public function validateRegistration(string $clientData, string $attestation, string $challenge): CreateData
     {
-        // Validate the registration data and attestation
-        // Return an object with the pass key data to be stored.
+        $client = $this->getClient();
+        $createData = $client->processCreate(
+            $clientData,
+            $attestation,
+            $challenge,
+            $this->getConfig('requireUserVerification'),
+            true,
+            false
+        );
 
+        return new CreateData($createData);
     }
 
     public function authenticate(ServerRequest $request): ResultInterface

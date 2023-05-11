@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Event\EventInterface;
+use Cake\ORM\Exception\PersistenceFailedException;
 use Cake\Utility\Text;
+use Cake\View\JsonView;
+use lbuchs\WebAuthn\WebAuthnException;
 
 /**
  * Users Controller
@@ -41,16 +44,72 @@ class UsersController extends AppController
             $webauth = $authService->authenticators()->get('Webauthn');
 
             // Get webauth registration/challenge data.
-            $registerData = $webauth->getRegistrationData(Text::uuid(), $this->request->getData('username'), $this->request->getData('displayName'));
+            $userId = Text::uuid();
+            $registerData = $webauth->getRegistrationData($userId, $this->request->getData('username'), $this->request->getData('displayName'));
 
             // Store registration data in the session so we can use
             // it once the user has completed their u2f prompt.
             $this->request->getSession()->write('Registration', [
+                'id' => $userId,
                 'username' => $this->request->getData('username'),
                 'displayName' => $this->request->getData('displayName'),
                 'challenge' => $registerData->challenge,
             ]);
             $this->set('registerData', $registerData);
+        }
+        $this->render('register');
+    }
+
+    public function completeRegister()
+    {
+        $request = $this->request;
+        $request->allowMethod('POST');
+
+        $session = $request->getSession();
+
+        /** @var \Authentication\AuthenticationService $authService */
+        $authService = $this->Authentication->getAuthenticationService();
+        $webauth = $authService->authenticators()->get('Webauthn');
+
+        $this->viewBuilder()
+            ->setClassName(JsonView::class)
+            ->setOption('serialize', ['success', 'message']);
+
+        try {
+            $clientData = base64_decode($request->getData('clientData'));
+            $attestation = base64_decode($request->getData('attestation'));
+            $challenge = $session->read('Registration.challenge');
+
+            $processData = $webauth->validateRegistration(
+                $clientData,
+                $attestation,
+                $challenge,
+            );
+        } catch (WebAuthnException $error) {
+            $this->set('success', false);
+            $this->set('message', $error->getMessage());
+            return;
+        }
+
+        $user = $this->Users->newEntity([
+            'uuid' => $session->read('Registration.id'),
+            'username' => $session->read('Registration.username'),
+            'display_name' => $session->read('Registration.displayName'),
+        ], ['guard' => false]);
+
+        try {
+            $passKey = $this->Users->Passkeys->createFromData($processData);
+            $user->passkeys[] = $passKey;
+            $user->setDirty('passkey', true);
+
+            $this->Users->saveOrFail($user, ['associated' => ['Passkeys']]);
+
+            $this->set('success', true);
+            $this->set('message', 'Register Success');
+        } catch (PersistenceFailedException $error) {
+            $this->set('success', false);
+            $this->set('message', $error->getMessage());
+            return;
         }
     }
 
