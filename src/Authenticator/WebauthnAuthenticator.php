@@ -6,9 +6,11 @@ namespace App\Authenticator;
 use App\Model\CreateData;
 use App\Model\RegistrationData;
 use Authentication\Authenticator\AbstractAuthenticator;
+use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Cake\Http\ServerRequest;
 use lbuchs\WebAuthn\WebAuthn;
+use Psr\Http\Message\ServerRequestInterface;
 
 class WebauthnAuthenticator extends AbstractAuthenticator
 {
@@ -59,7 +61,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
 
         $client = $this->getClient();
         $challengeData = $client->getCreateArgs(
-            \hex2bin($userId),
+            $userId,
             $username,
             $displayName,
             $this->getConfig('promptTimeout'),
@@ -86,7 +88,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         return new CreateData($createData);
     }
 
-    public function authenticate(ServerRequest $request): ResultInterface
+    public function authenticate(ServerRequestInterface $request): ResultInterface
     {
         // Check for user name.
 
@@ -94,5 +96,6 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         // an exception with the necessary challenge data.
 
         // Validate attestation
+        return new Result(null, Result::FAILURE_CREDENTIALS_MISSING, ['Credentials missing']);
     }
 }

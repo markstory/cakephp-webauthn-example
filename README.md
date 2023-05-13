@@ -42,6 +42,29 @@ Or a PHP webserver & nodejs HTTPS server.
 nodejs bin/server
 ```
 
+### mkcert & stunnel
+
+Using a pair of CLI utilities you can generate an HTTPs proxy for the cakephp
+dev server. I found this pretty simple to use on linux.
+
+Generate certificates for your local machine using `mkcert`
+
+```bash
+mkcert localhost
+cat localhost.pem localhost-key.pem > localhost-bundle.pem
+chmod 0666 *.pem
+```
+
+This will generate certificate & key file. Create the bundled certificate
+for `stunnel`
+
+Then in one terminal, run: `bin/cake server` and then in another run 
+
+```bash
+sudo stunnel3 -f -d 443 -r 8765 -p ./localhost-bundle.pem
+```
+
+
 Lastly you can use hosted services to create SSL tunnels.
 
 ## Configuration

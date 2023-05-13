@@ -22,7 +22,7 @@ class UsersController extends AppController
     {
         parent::initialize();
 
-        $this->addComponent('Authentication.Authentication');
+        $this->loadComponent('Authentication.Authentication');
     }
 
     public function beforeFilter(EventInterface $event)
@@ -76,6 +76,7 @@ class UsersController extends AppController
             ->setOption('serialize', ['success', 'message']);
 
         try {
+            // TODO this is failing now.
             $clientData = base64_decode($request->getData('clientData'));
             $attestation = base64_decode($request->getData('attestation'));
             $challenge = $session->read('Registration.challenge');

@@ -23,7 +23,7 @@ echo $this->Form->end();
  * @param {mixed} obj
  * @returns {undefined}
  */
-function recursiveBase64ToArrayBuffer() {
+function recursiveBase64ToArrayBuffer(obj) {
     let prefix = '=?BINARY?B?';
     let suffix = '?=';
     if (typeof obj === 'object') {
@@ -63,7 +63,7 @@ function arrayBufferToBase64(buffer) {
 }
 
 async function completeRegistration() {
-    var registerData = <?= json_encode($registerData->challenge); ?>;
+    var registerData = <?= json_encode($registerData->registration); ?>;
 
     recursiveBase64ToArrayBuffer(registerData);
     const cred = await navigator.credentials.create(registerData);
@@ -76,6 +76,7 @@ async function completeRegistration() {
         method: 'POST',
         body: JSON.stringify(attestationResponse),
         cache: 'no-cache',
+        headers: {'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'},
     });
 
     if (response.success) {
