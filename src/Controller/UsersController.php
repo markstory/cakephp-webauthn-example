@@ -76,7 +76,6 @@ class UsersController extends AppController
             ->setOption('serialize', ['success', 'message']);
 
         try {
-            // TODO this is failing now.
             $clientData = base64_decode($request->getData('clientData'));
             $attestation = base64_decode($request->getData('attestation'));
             $challenge = $session->read('Registration.challenge');
@@ -89,28 +88,29 @@ class UsersController extends AppController
         } catch (WebAuthnException $error) {
             $this->set('success', false);
             $this->set('message', $error->getMessage());
+
             return;
         }
 
-        $user = $this->Users->newEntity([
-            'uuid' => $session->read('Registration.id'),
-            'username' => $session->read('Registration.username'),
-            'display_name' => $session->read('Registration.displayName'),
-        ], ['guard' => false]);
+        $user = $this->Users->newEmptyEntity();
+        $user->uuid = $session->read('Registration.id');
+        $user->username = $session->read('Registration.username');
+        $user->display_name = $session->read('Registration.displayName');
 
         try {
-            $passKey = $this->Users->Passkeys->createFromData($processData);
-            $user->passkeys[] = $passKey;
-            $user->setDirty('passkey', true);
+            $this->Users->getConnection()->transactional(function () use ($user, $processData) {
+                $this->Users->saveOrFail($user);
 
-            $this->Users->saveOrFail($user, ['associated' => ['Passkeys']]);
+                $passkey = $this->Users->Passkeys->createFromData($processData);
+                $passkey->user_id = $user->id;
+                $this->Users->Passkeys->saveOrFail($passkey);
+            });
 
             $this->set('success', true);
             $this->set('message', 'Register Success');
         } catch (PersistenceFailedException $error) {
             $this->set('success', false);
             $this->set('message', $error->getMessage());
-            return;
         }
     }
 

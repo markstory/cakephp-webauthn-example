@@ -15,13 +15,13 @@ class CreateUsersTable extends AbstractMigration
     public function change(): void {
         $table = $this->table('users')
             ->addColumn('uuid', 'string', ['null' => false])
-            ->addColumn('email', 'string', ['null' => false])
-            ->addIndex(['email'], ['unique' => true]);
+            ->addColumn('username', 'string', ['null' => false])
+            ->addColumn('display_name', 'string', ['null' => true])
+            ->addIndex(['username'], ['unique' => true]);
         $table->save();
 
         $table = $this->table('passkeys')
             ->addColumn('user_id', 'integer', ['null' => false])
-            ->addColumn('display_name', 'string', ['null' => false])
             ->addColumn('credential_id', 'string', ['null' => false])
             ->addColumn('payload', 'text')
             ->addForeignKey(['user_id'], 'users');

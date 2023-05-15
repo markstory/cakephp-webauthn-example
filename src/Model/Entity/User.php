@@ -11,7 +11,9 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property string $uuid
- * @property string $email
+ * @property string $username
+ * @property string $display_name
+ * @property array<\App\Model\Passkey> $passkeys
  */
 class User extends Entity
 {
@@ -25,7 +27,6 @@ class User extends Entity
      * @var array<string, bool>
      */
     protected $_accessible = [
-        'uuid' => true,
-        'email' => true,
+        'display_name' => true,
     ];
 }

@@ -41,7 +41,6 @@ class PasskeysTable extends Table
         parent::initialize($config);
 
         $this->setTable('passkeys');
-        $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
 
         $this->belongsTo('Users', [
@@ -61,11 +60,6 @@ class PasskeysTable extends Table
         $validator
             ->integer('user_id')
             ->notEmptyString('user_id');
-
-        $validator
-            ->scalar('display_name')
-            ->requirePresence('display_name', 'create')
-            ->notEmptyString('display_name');
 
         $validator
             ->scalar('credential_id')
@@ -94,14 +88,12 @@ class PasskeysTable extends Table
         return $rules;
     }
 
-
     public function createFromData(CreateData $data)
     {
-        $key = $this->newEntity([
-            'display_name' => '',
-            'credential_id' => $data->payload->credentialId,
-            'payload' => json_encode($data->payload),
-        ]);
+        $key = $this->newEmptyEntity();
+        $key->credential_id = $data->getCredentialId();
+        $key->payload = json_encode($data->getPayload());
+
         return $key;
     }
 }

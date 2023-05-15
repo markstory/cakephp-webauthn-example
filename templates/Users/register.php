@@ -76,12 +76,17 @@ async function completeRegistration() {
         method: 'POST',
         body: JSON.stringify(attestationResponse),
         cache: 'no-cache',
-        headers: {'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'},
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>',
+        },
     });
+    var responseData = await response.json();
 
-    if (response.success) {
+    if (responseData.success) {
         const messageEl = document.getElementById('register-flash');
-        messageEl.textContent = "Successfully registered";
+        messageEl.innerText = "Successfully registered";
         messageEl.style.display = 'block';
     }
 }

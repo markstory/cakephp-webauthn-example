@@ -10,7 +10,6 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property int $user_id
- * @property string $display_name
  * @property string $credential_id
  * @property string $payload
  *
@@ -29,7 +28,6 @@ class Passkey extends Entity
      */
     protected $_accessible = [
         'user_id' => true,
-        'display_name' => true,
         'credential_id' => true,
         'payload' => true,
         'user' => true,

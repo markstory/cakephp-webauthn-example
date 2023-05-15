@@ -9,6 +9,7 @@ use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Cake\Http\ServerRequest;
+use lbuchs\WebAuthn\Binary\ByteBuffer;
 use lbuchs\WebAuthn\WebAuthn;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -73,7 +74,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         return new RegistrationData($challengeData, $client->getChallenge());
     }
 
-    public function validateRegistration(string $clientData, string $attestation, string $challenge): CreateData
+    public function validateRegistration(string $clientData, string $attestation, ByteBuffer $challenge): CreateData
     {
         $client = $this->getClient();
         $createData = $client->processCreate(
