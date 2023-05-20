@@ -134,6 +134,11 @@ class UsersController extends AppController
         }
     }
 
+    public function logout() {
+        $this->Authentication->logout();
+        $this->redirect(['action' => 'login']);
+    }
+
     /**
      * Index method
      *

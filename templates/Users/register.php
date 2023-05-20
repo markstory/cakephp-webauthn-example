@@ -19,7 +19,10 @@ echo $this->Form->end();
 <script type="text/javascript">
 async function completeRegistration(registerData, csrfToken) {
     recursiveBase64ToArrayBuffer(registerData);
+
+    // TODO this is failing now for some reason?
     const cred = await navigator.credentials.create(registerData);
+
     const attestationResponse = {
         clientData: arrayBufferToBase64(cred.response.clientDataJSON),
         attestation: arrayBufferToBase64(cred.response.attestationObject),

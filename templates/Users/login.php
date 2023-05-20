@@ -25,16 +25,7 @@ async function completeLogin(loginData) {
     recursiveBase64ToArrayBuffer(loginData);
     console.log(loginData);
     console.log('start cred');
-    let cred
-    navigator.credentials.get(loginData).then(function (result) {
-        cred = result;
-    }).catch(function (err) {
-        console.error('Credential read failed', err);
-    })
-    if (!cred) {
-        alert('No credential key found');
-        return;
-    }
+    const cred = await navigator.credentials.get(loginData);
     console.log('creds', cred);
 
     const attestationResponse = {
