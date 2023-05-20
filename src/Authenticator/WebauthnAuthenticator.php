@@ -30,7 +30,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         // Property on the user that has the registered passkeys
         'passkeysProperty' => 'passkeys',
         // Device types you accept. Default is all current types.
-        'deviceTypes' => self::TYPE_ALL,
+        'deviceTypes' => self::TYPE_CROSSPLATFORM,
         // Timeout for challenge response
         'promptTimeout' => 20,
         // Require devices with resident key support
