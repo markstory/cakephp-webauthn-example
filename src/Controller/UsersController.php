@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Authentication\Authenticator\Result;
 use Cake\Event\EventInterface;
 use Cake\ORM\Exception\PersistenceFailedException;
 use Cake\Utility\Text;
@@ -31,9 +32,27 @@ class UsersController extends AppController
         $this->Authentication->allowUnauthenticated([
             'startRegister',
             'completeRegister',
+            'login',
             'startLogin',
             'completeLogin'
         ]);
+    }
+
+    public function login()
+    {
+        if ($this->request->is('post')) {
+            $authResult = $this->Authentication->getResult();
+            if ($authResult->isValid()) {
+                $this->Flash->success('You are logged in');
+            } else {
+                if ($authResult->getStatus() == Result::FAILURE_CREDENTIALS_MISSING) {
+                    $loginData = $authResult->getData();
+                    $this->request->getSession()->write('Webauthn.challenge', $loginData->challenge);
+                    $this->set('loginData', $loginData);
+                }
+            }
+        }
+        $this->set('user', $this->Authentication->getIdentity());
     }
 
     public function startRegister()
@@ -76,6 +95,7 @@ class UsersController extends AppController
             ->setOption('serialize', ['success', 'message']);
 
         try {
+            // TODO move this to authenticator class.
             $clientData = base64_decode($request->getData('clientData'));
             $attestation = base64_decode($request->getData('attestation'));
             $challenge = $session->read('Registration.challenge');

@@ -80,4 +80,9 @@ class UsersTable extends Table
 
         return $rules;
     }
+
+    public function findLogin(Query $query, array $options): Query
+    {
+        return $query->contain('Passkeys');
+    }
 }
