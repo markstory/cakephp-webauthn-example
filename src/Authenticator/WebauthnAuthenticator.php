@@ -130,7 +130,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         // Check for passkey data
         $hasData = true;
         $data = $request->getData();
-        $requiredKeys = ['clientData', 'authenticator', 'signature', 'userHandle', 'id'];
+        $requiredKeys = ['clientData', 'authenticator', 'signature', 'id'];
         foreach ($requiredKeys as $key) {
             if (empty($data[$key])) {
                 $hasData = false;
@@ -161,11 +161,12 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         }
 
         // Verify passkey data
-        $id = base64_decode($request->getData('id'));
-        $clientData = base64_decode($request->getData('clientData'));
-        $authenticator = base64_decode($request->getData('authenticator'));
-        $signature = base64_decode($request->getData('signature'));
-        $userHandle = base64_decode($request->getData('userHandle'));
+        // TODO Validate that these are strings
+        $id = $request->getData('id', '');
+        $clientData = base64_decode($request->getData('clientData', ''));
+        $authenticator = base64_decode($request->getData('authenticator', ''));
+        $signature = base64_decode($request->getData('signature', ''));
+        $userHandle = base64_decode($request->getData('userHandle', ''));
 
         $passkeys = $user->passkeys;
         $found = null;
@@ -193,7 +194,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
                 $found->getPublicKey(),
                 $challenge,
                 null,
-                $this->getConfig('requireUserVerification'),
+                $this->getConfig('requireUserVerfication') == 'required',
             );
 
             return new Result($user, Result::SUCCESS);

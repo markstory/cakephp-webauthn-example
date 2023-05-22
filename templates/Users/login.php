@@ -25,16 +25,17 @@ async function completeLogin(loginData, csrfToken) {
     recursiveBase64ToArrayBuffer(loginData);
     const cred = await navigator.credentials.get(loginData);
 
-    const attestationResponse = {
+    const requestData = {
         id: arrayBufferToBase64(cred.rawId),
         clientData: arrayBufferToBase64(cred.response.clientDataJSON),
         authenticator: arrayBufferToBase64(cred.response.authenticatorData),
         signature: arrayBufferToBase64(cred.response.signature),
         userHandle: arrayBufferToBase64(cred.response.userHandle),
+        username: document.querySelector('#username').value,
     };
     var response = await window.fetch("/users/login", {
         method: 'POST',
-        body: JSON.stringify(attestationResponse),
+        body: JSON.stringify(requestData),
         cache: 'no-cache',
         headers: {
             'Content-Type': 'application/json',
@@ -42,10 +43,11 @@ async function completeLogin(loginData, csrfToken) {
             'X-CSRF-Token': csrfToken,
         }
     });
-    var responseData = await response.json();
-    if (responseData.success) {
-        const messageel = document.getElementById('login-flash');
-        messageEl.innerText = "Login complete",
+    if (response.redirected) {
+        window.location = response.url;
+    } else {
+        const messageEl = document.getElementById('login-flash');
+        messageEl.innerText = "Login failed",
         messageEl.style.display = 'block';
     }
 }

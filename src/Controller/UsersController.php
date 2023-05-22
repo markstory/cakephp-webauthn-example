@@ -44,6 +44,8 @@ class UsersController extends AppController
             $authResult = $this->Authentication->getResult();
             if ($authResult->isValid()) {
                 $this->Flash->success('You are logged in');
+
+                return $this->redirect(['action' => 'index']);
             } else {
                 if ($authResult->getStatus() == Result::FAILURE_CREDENTIALS_MISSING) {
                     $loginData = $authResult->getData();

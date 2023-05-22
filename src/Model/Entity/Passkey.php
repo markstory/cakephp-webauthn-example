@@ -32,16 +32,16 @@ class Passkey extends Entity
         'payload' => true,
         'user' => true,
     ];
-    
-    private $payload;
+
+    private $decoded;
 
     protected function getPayload()
     {
-        if ($this->payload == null) {
-            $this->payload = json_decode($this->payload);
+        if ($this->decoded == null) {
+            $this->decoded = json_decode($this->payload);
         }
 
-        return $this->payload;
+        return $this->decoded;
     }
 
     public function getUserHandle(): ?string
