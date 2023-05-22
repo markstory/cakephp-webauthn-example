@@ -36,7 +36,10 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         // Require devices with resident key support
         'requireResidentKey' => false,
         // Is user verification (pin/access code) required.
-        'requireUserVerification' => false,
+        // One of required|preferred|discouraged.
+        // Default value is discouraged to be as simple as possible
+        // for end users.
+        'requireUserVerification' => 'discouraged',
     ];
 
     public const TYPE_USB = 'usb';
@@ -72,6 +75,8 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         $types = $this->getConfig('deviceTypes');
         $crossPlatform = !in_array('int', $types) && array_intersect(self::TYPE_CROSSPLATFORM, $types) !== [];
 
+        // TODO Make a similar function for existing users
+        // so that 'add a key' works.
         $client = $this->getClient();
         $challengeData = $client->getCreateArgs(
             $userId,
@@ -79,7 +84,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
             $displayName,
             $this->getConfig('promptTimeout'),
             $this->getConfig('requireResidentKey'),
-            $this->getConfig('requireUserVerification'),
+            $this->getConfig('requireUserVerification') === 'required',
             $crossPlatform,
         );
 
@@ -93,9 +98,9 @@ class WebauthnAuthenticator extends AbstractAuthenticator
             $clientData,
             $attestation,
             $challenge,
-            $this->getConfig('requireUserVerification'),
+            $this->getConfig('requireUserVerification') === 'required',
             true,
-            false
+            false, // TODO make this true.
         );
 
         return new CreateData($createData);
@@ -135,7 +140,10 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         $challenge = $request->getSession()->read('Webauthn.challenge');
         if (!$hasData || !$challenge) {
             Log::debug('Missing required request data, or Webauthn.challenge data in session.', 'webauthn');
+
             $ids = collection($user->passkeys)->extract('credential_id')->toList();
+            $ids = array_map('base64_decode', $ids);
+
             $deviceTypes = $this->getconfig('deviceTypes');
             // Prompt for challenge
             $loginData = $client->getGetArgs(
@@ -144,7 +152,6 @@ class WebauthnAuthenticator extends AbstractAuthenticator
                 in_array(self::TYPE_USB, $deviceTypes),
                 in_array(self::TYPE_NFC, $deviceTypes),
                 in_array(self::TYPE_BLE, $deviceTypes),
-                in_array(self::TYPE_HYBRID, $deviceTypes),
                 in_array(self::TYPE_INT, $deviceTypes),
                 $this->getConfig('requireUserVerification'),
             );

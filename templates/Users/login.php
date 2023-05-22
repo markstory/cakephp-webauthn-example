@@ -21,12 +21,9 @@ echo $this->Form->end();
 if (isset($loginData)): ?>
 <?= $this->element('webauthn-utils'); ?>
 <script type="text/javascript">
-async function completeLogin(loginData) {
+async function completeLogin(loginData, csrfToken) {
     recursiveBase64ToArrayBuffer(loginData);
-    console.log(loginData);
-    console.log('start cred');
     const cred = await navigator.credentials.get(loginData);
-    console.log('creds', cred);
 
     const attestationResponse = {
         id: arrayBufferToBase64(cred.rawId),
@@ -35,7 +32,6 @@ async function completeLogin(loginData) {
         signature: arrayBufferToBase64(cred.response.signature),
         userHandle: arrayBufferToBase64(cred.response.userHandle),
     };
-console.log(attestationResponse);
     var response = await window.fetch("/users/login", {
         method: 'POST',
         body: JSON.stringify(attestationResponse),
@@ -47,7 +43,6 @@ console.log(attestationResponse);
         }
     });
     var responseData = await response.json();
-console.log(responseData);
     if (responseData.success) {
         const messageel = document.getElementById('login-flash');
         messageEl.innerText = "Login complete",
@@ -55,6 +50,6 @@ console.log(responseData);
     }
 }
 
-completeLogin(<?= json_encode($loginData->loginData); ?>);
+completeLogin(<?= json_encode($loginData->loginData); ?>, '<?= $this->request->getAttribute('csrfToken') ?>');
 </script>
 <?php endif ?>
