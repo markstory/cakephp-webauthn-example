@@ -19,21 +19,25 @@ class LoginChallenge implements ArrayAccess
         $this->challenge = $challenge;
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetSet($key, $value): void
     {
         throw new RuntimeException('Not Implemented');
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetUnset($key): void
     {
         throw new RuntimeException('Not Implemented');
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetExists($key): bool
     {
         return isset($this->{$key});
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetGet($key)
     {
         return $this->{$key};
