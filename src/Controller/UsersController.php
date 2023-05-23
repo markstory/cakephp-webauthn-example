@@ -45,7 +45,7 @@ class UsersController extends AppController
             if ($authResult->isValid()) {
                 $this->Flash->success('You are logged in');
 
-                return $this->redirect(['action' => 'index']);
+                return $this->redirect(['action' => 'profile']);
             } else {
                 if ($authResult->getStatus() == Result::FAILURE_CREDENTIALS_MISSING) {
                     $loginData = $authResult->getData();
@@ -65,18 +65,22 @@ class UsersController extends AppController
             $webauth = $authService->authenticators()->get('Webauthn');
 
             // Get webauth registration/challenge data.
-            $userId = Text::uuid();
-            $registerData = $webauth->getRegistrationData($userId, $this->request->getData('username'), $this->request->getData('displayName'));
+            $user = $this->Users->newEntity($this->request->getData());
+            $user->uuid = Text::uuid();
 
+            $registerData = $webauth->getRegistrationData(
+                $user->uuid,
+                $user->username,
+                $user->display_name
+            );
             // Store registration data in the session so we can use
             // it once the user has completed their u2f prompt.
             $this->request->getSession()->write('Registration', [
-                'id' => $userId,
-                'username' => $this->request->getData('username'),
-                'displayName' => $this->request->getData('displayName'),
+                'user' => $user,
                 'challenge' => $registerData->challenge,
             ]);
             $this->set('registerData', $registerData);
+            $this->set('user', $user);
         }
         $this->render('register');
     }
@@ -97,14 +101,9 @@ class UsersController extends AppController
             ->setOption('serialize', ['success', 'message']);
 
         try {
-            // TODO move this to authenticator class.
-            $clientData = base64_decode($request->getData('clientData'));
-            $attestation = base64_decode($request->getData('attestation'));
             $challenge = $session->read('Registration.challenge');
-
             $processData = $webauth->validateRegistration(
-                $clientData,
-                $attestation,
+                $request,
                 $challenge,
             );
         } catch (WebAuthnException $error) {
@@ -114,16 +113,12 @@ class UsersController extends AppController
             return;
         }
 
-        $user = $this->Users->newEmptyEntity();
-        $user->uuid = $session->read('Registration.id');
-        $user->username = $session->read('Registration.username');
-        $user->display_name = $session->read('Registration.displayName');
-
+        $user = $session->read('Registration.user');
         try {
             $this->Users->getConnection()->transactional(function () use ($user, $processData) {
                 $this->Users->saveOrFail($user);
 
-                $passkey = $this->Users->Passkeys->createFromData($processData);
+                $passkey = $this->Users->Passkeys->createFromData($processData, 'initial authenticator');
                 $passkey->user_id = $user->id;
                 $this->Users->Passkeys->saveOrFail($passkey);
             });
@@ -136,33 +131,22 @@ class UsersController extends AppController
         }
     }
 
-    public function logout() {
+    public function logout()
+    {
         $this->Authentication->logout();
         $this->redirect(['action' => 'login']);
     }
 
     /**
-     * Index method
+     * View the current user's profile
      *
-     * @return \Cake\Http\Response|null|void Renders view
-     */
-    public function index()
-    {
-        $users = $this->paginate($this->Users);
-
-        $this->set(compact('users'));
-    }
-
-    /**
-     * View method
-     *
-     * @param string|null $id User id.
      * @return \Cake\Http\Response|null|void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function view()
     {
-        $user = $this->Users->get($id, [
+        $identity = $this->Authentication->getIdentity();
+        $user = $this->Users->get($identity->id, [
             'contain' => ['Passkeys'],
         ]);
 
@@ -170,16 +154,21 @@ class UsersController extends AppController
     }
 
     /**
-     * Add method
+     * Edit the current user.
      *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function add()
+    public function edit()
     {
-        $user = $this->Users->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $user = $this->Users->patchEntity($user, $this->request->getData());
-            if ($this->Users->save($user)) {
+        $identity = $this->Authentication->getIdentity();
+        $user = $this->Users->get($identity->id, [
+            'contain' => ['Passkeys'],
+        ]);
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $options = ['associated' => ['Passkeys']];
+            $user = $this->Users->patchEntity($user, $this->request->getData(), $options);
+            if ($this->Users->save($user, $options)) {
                 $this->Flash->success(__('The user has been saved.'));
 
                 return $this->redirect(['action' => 'index']);
@@ -189,41 +178,81 @@ class UsersController extends AppController
         $this->set(compact('user'));
     }
 
-    /**
-     * Edit method
-     *
-     * @param string|null $id User id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit($id = null)
+    public function addPasskey()
     {
-        $user = $this->Users->get($id, [
-            'contain' => [],
+        $identity = $this->Authentication->getIdentity();
+        $user = $this->Users->get($identity->id, [
+            'contain' => ['Passkeys'],
         ]);
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $user = $this->Users->patchEntity($user, $this->request->getData());
-            if ($this->Users->save($user)) {
-                $this->Flash->success(__('The user has been saved.'));
+            /** @var \Authentication\AuthenticationService $authService */
+            $authService = $this->Authentication->getAuthenticationService();
+            $webauth = $authService->authenticators()->get('Webauthn');
 
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The user could not be saved. Please, try again.'));
+            $registerData = $webauth->getRegistrationData(
+                $user->uuid,
+                $user->username,
+                $user->display_name
+            );
+            // Store registration data in the session so we can use
+            // it once the user has completed their u2f prompt.
+            $this->request->getSession()->write('Registration', [
+                'challenge' => $registerData->challenge,
+            ]);
+            $this->set('registerData', $registerData);
         }
-        $this->set(compact('user'));
+        $this->set('user', $user);
+
+        return $this->render('view');
+    }
+
+    public function completeAddPasskey()
+    {
+        $request = $this->request;
+        $session = $request->getSession();
+        $identity = $this->Authentication->getIdentity();
+        try {
+            /** @var \Authentication\AuthenticationService $authService */
+            $authService = $this->Authentication->getAuthenticationService();
+            $webauth = $authService->authenticators()->get('Webauthn');
+
+            $challenge = $session->read('Registration.challenge');
+            $createData = $webauth->validateRegistration(
+                $request,
+                $challenge,
+            );
+        } catch (WebAuthnException $error) {
+            $this->set('success', false);
+            $this->set('message', $error->getMessage());
+
+            return;
+        }
+
+        // TODO random name generator
+        $passKey = $this->Users->Passkeys->createFromData($createData, 'Fluffy Rhino');
+
+        $passKey->user_id = $identity->id;
+        if ($this->Users->Passkeys->save($passKey)) {
+            $this->Flash->success(__('The passkey has been saved.'));
+
+            return $this->redirect(['action' => 'view']);
+        }
+        $this->Flash->error(__('The pass key could not be saved. Please, try again.'));
+
+        return $this->redirect(['action' => 'addPasskey']);
     }
 
     /**
      * Delete method
      *
-     * @param string|null $id User id.
      * @return \Cake\Http\Response|null|void Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete()
     {
         $this->request->allowMethod(['post', 'delete']);
-        $user = $this->Users->get($id);
+        $identity = $this->Authentication->getIdentity();
+        $user = $this->Users->get($identity->id);
         if ($this->Users->delete($user)) {
             $this->Flash->success(__('The user has been deleted.'));
         } else {

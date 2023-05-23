@@ -10,7 +10,7 @@
 <?php
 echo $this->Form->create();
 echo $this->Form->control('username');
-echo $this->Form->control('displayName');
+echo $this->Form->control('display_name');
 echo $this->Form->submit('Register');
 echo $this->Form->end();
 ?>
@@ -20,7 +20,6 @@ echo $this->Form->end();
 async function completeRegistration(registerData, csrfToken) {
     recursiveBase64ToArrayBuffer(registerData);
 
-    // TODO this is failing now for some reason?
     const cred = await navigator.credentials.create(registerData);
 
     const attestationResponse = {

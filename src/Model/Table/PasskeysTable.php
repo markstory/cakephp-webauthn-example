@@ -88,10 +88,11 @@ class PasskeysTable extends Table
         return $rules;
     }
 
-    public function createFromData(CreateData $data)
+    public function createFromData(CreateData $data, string $displayName)
     {
         $key = $this->newEmptyEntity();
         $key->credential_id = $data->getCredentialId();
+        $key->display_name = $displayName;
         $key->payload = json_encode($data->getPayload());
 
         return $key;

@@ -57,6 +57,9 @@ return static function (RouteBuilder $routes) {
          */
         $builder->connect('/pages/*', 'Pages::display');
 
+        $builder->post('/users/passkeys/add', 'Users::addPasskey');
+        $builder->post('/users/passkeys/complete', 'Users::completeAddPasskey');
+
         /*
          * Connect catchall routes for all controllers.
          *

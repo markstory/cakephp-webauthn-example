@@ -68,8 +68,11 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         $this->client->addRootCertificates($certificatePath);
     }
 
-    public function getRegistrationData(string $userId, string $username, string $displayName): RegistrationData
-    {
+    public function getRegistrationData(
+        string $userId,
+        string $username,
+        string $displayName
+    ): RegistrationData {
         // Determine if we should support cross platform keys.
         // If the 'int' type is supported, we are crossplatform.
         $types = $this->getConfig('deviceTypes');
@@ -91,8 +94,13 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         return new RegistrationData($challengeData, $client->getChallenge());
     }
 
-    public function validateRegistration(string $clientData, string $attestation, ByteBuffer $challenge): CreateData
-    {
+    public function validateRegistration(
+        ServerRequest $request,
+        ByteBuffer $challenge
+    ): CreateData {
+        $clientData = base64_decode($request->getData('clientData'));
+        $attestation = base64_decode($request->getData('attestation'));
+
         $client = $this->getClient();
         $createData = $client->processCreate(
             $clientData,
@@ -121,7 +129,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
             return new Result(null, Result::FAILURE_IDENTITY_NOT_FOUND);
         }
         if (empty($user->passkeys)) {
-            Log::debug("User found, but no passkeys", 'webauthn');
+            Log::debug('User found, but no passkeys', 'webauthn');
 
             return new Result(null, Result::FAILURE_IDENTITY_NOT_FOUND);
         }
