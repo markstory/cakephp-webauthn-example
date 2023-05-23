@@ -90,12 +90,8 @@ async function completeAddPasskey(registerData, csrfToken) {
             'X-CSRF-Token': csrfToken,
         },
     });
-    var responseData = await response.json();
-
-    if (responseData.success) {
-        const messageEl = document.getElementById('register-flash');
-        messageEl.innerText = "Successfully registered";
-        messageEl.style.display = 'block';
+    if (response.redirected) {
+        window.location = '/users/view';
     }
 }
 
