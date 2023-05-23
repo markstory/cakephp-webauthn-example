@@ -33,8 +33,6 @@ class UsersController extends AppController
             'startRegister',
             'completeRegister',
             'login',
-            'startLogin',
-            'completeLogin'
         ]);
     }
 
@@ -45,7 +43,7 @@ class UsersController extends AppController
             if ($authResult->isValid()) {
                 $this->Flash->success('You are logged in');
 
-                return $this->redirect(['action' => 'profile']);
+                return $this->redirect(['action' => 'view']);
             } else {
                 if ($authResult->getStatus() == Result::FAILURE_CREDENTIALS_MISSING) {
                     $loginData = $authResult->getData();
@@ -65,7 +63,9 @@ class UsersController extends AppController
             $webauth = $authService->authenticators()->get('Webauthn');
 
             // Get webauth registration/challenge data.
-            $user = $this->Users->newEntity($this->request->getData());
+            $user = $this->Users->newEntity($this->request->getData(), [
+                'fields' => ['username', 'display_name'],
+            ]);
             $user->uuid = Text::uuid();
 
             $registerData = $webauth->getRegistrationData(

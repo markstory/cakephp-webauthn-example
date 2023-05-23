@@ -103,4 +103,5 @@ completeAddPasskey(
     <?= json_encode($registerData->registration); ?>,
     '<?= $this->request->getAttribute('csrfToken') ?>',
 );
+</script>
 <?php endif ?>
