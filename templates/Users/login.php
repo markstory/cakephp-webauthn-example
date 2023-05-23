@@ -44,7 +44,7 @@ async function completeLogin(loginData, csrfToken) {
         }
     });
     if (response.redirected) {
-        window.location = response.url;
+        window.location = '/users';
     } else {
         const messageEl = document.getElementById('login-flash');
         messageEl.innerText = "Login failed",

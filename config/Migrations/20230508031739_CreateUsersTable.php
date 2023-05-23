@@ -23,6 +23,7 @@ class CreateUsersTable extends AbstractMigration
         $table = $this->table('passkeys')
             ->addColumn('user_id', 'integer', ['null' => false])
             ->addColumn('credential_id', 'string', ['null' => false])
+            ->addColumn('display_name', 'string')
             ->addColumn('payload', 'text')
             ->addForeignKey(['user_id'], 'users');
         $table->save();
