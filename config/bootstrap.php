@@ -148,10 +148,13 @@ if (!$fullBaseUrl) {
      */
     $trustProxy = false;
 
+    /* The webauthn example app always has to be https
     $s = null;
     if (env('HTTPS') || ($trustProxy && env('HTTP_X_FORWARDED_PROTO') === 'https')) {
         $s = 's';
     }
+    */
+    $s = 's';
 
     $httpHost = env('HTTP_HOST');
     if (isset($httpHost)) {
