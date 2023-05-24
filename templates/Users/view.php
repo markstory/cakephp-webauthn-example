@@ -41,23 +41,24 @@
                 <?php if (!empty($user->passkeys)) : ?>
                 <div class="table-responsive">
                     <table>
-                        <tr>
-                            <th><?= __('Id') ?></th>
-                            <th><?= __('User Id') ?></th>
-                            <th><?= __('Credential Id') ?></th>
-                            <th><?= __('Display Name') ?></th>
-                            <th class="actions"><?= __('Actions') ?></th>
-                        </tr>
                         <?php foreach ($user->passkeys as $passkeys) : ?>
                         <tr>
-                            <td><?= h($passkeys->id) ?></td>
-                            <td><?= h($passkeys->user_id) ?></td>
-                            <td><?= h($passkeys->credential_id) ?></td>
+                            <th><?= __('Device type') ?></th>
+                            <td><?= h($passkeys->getCertificateIssuer()) ?></td>
+                        </tr>
+                        <tr>
+                            <th><?= __('Display Name') ?></th>
                             <td><?= h($passkeys->display_name) ?></td>
+                        </tr>
+                        <tr>
+                            <th class="actions"><?= __('Actions') ?></th>
                             <td class="actions">
-                                <?= $this->Html->link(__('View'), ['controller' => 'Passkeys', 'action' => 'view', $passkeys->id]) ?>
                                 <?= $this->Html->link(__('Edit'), ['controller' => 'Passkeys', 'action' => 'edit', $passkeys->id]) ?>
                                 <?= $this->Form->postLink(__('Delete'), ['controller' => 'Passkeys', 'action' => 'delete', $passkeys->id], ['confirm' => __('Are you sure you want to delete # {0}?', $passkeys->id)]) ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
                             </td>
                         </tr>
                         <?php endforeach; ?>

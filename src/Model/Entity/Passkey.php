@@ -27,10 +27,7 @@ class Passkey extends Entity
      * @var array<string, bool>
      */
     protected $_accessible = [
-        'user_id' => true,
-        'credential_id' => true,
-        'payload' => true,
-        'user' => true,
+        'display_name' => true,
     ];
 
     private $decoded;
@@ -52,5 +49,10 @@ class Passkey extends Entity
     public function getPublicKey(): string
     {
         return $this->getPayload()->credentialPublicKey;
+    }
+
+    public function getCertificateIssuer(): string
+    {
+        return $this->getPayload()->certificateIssuer;
     }
 }

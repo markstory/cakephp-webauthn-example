@@ -19,13 +19,6 @@ use lbuchs\WebAuthn\WebAuthnException;
  */
 class UsersController extends AppController
 {
-    public function initialize(): void
-    {
-        parent::initialize();
-
-        $this->loadComponent('Authentication.Authentication');
-    }
-
     public function beforeFilter(EventInterface $event)
     {
         parent::beforeFilter($event);
