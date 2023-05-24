@@ -79,16 +79,11 @@ async function completeAddPasskey(registerData, csrfToken) {
         clientData: arrayBufferToBase64(cred.response.clientDataJSON),
         attestation: arrayBufferToBase64(cred.response.attestationObject),
     };
-
-    var response = await window.fetch("/users/passkeys/complete", {
+    const response = await sendRequest({
+        url: '/users/passkeys/complete',
         method: 'POST',
-        body: JSON.stringify(attestationResponse),
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-Token': csrfToken,
-        },
+        data: attestationResponse,
+        csrfToken: csrfToken,
     });
     if (response.redirected) {
         window.location = '/users/view';

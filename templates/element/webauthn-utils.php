@@ -52,4 +52,19 @@ function arrayBufferToBase64(buffer) {
     }
     return window.btoa(binary);
 }
+
+async function sendRequest(options) {
+    const {url, method, csrfToken, data} = options;
+    var response = await window.fetch(url, {
+        method: method,
+        body: JSON.stringify(data),
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-Token': csrfToken,
+        },
+    });
+    return response;
+}
 </script>

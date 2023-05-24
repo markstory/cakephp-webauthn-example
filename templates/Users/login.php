@@ -33,15 +33,11 @@ async function completeLogin(loginData, csrfToken) {
         userHandle: arrayBufferToBase64(cred.response.userHandle),
         username: document.querySelector('#username').value,
     };
-    var response = await window.fetch("/users/login", {
+    const response = await sendRequest({
+        url: '/users/login',
         method: 'POST',
-        body: JSON.stringify(requestData),
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-Token': csrfToken,
-        }
+        data: requestData,
+        csrfToken: csrfToken,
     });
     if (response.redirected) {
         window.location = '/users/view';

@@ -11,6 +11,7 @@ use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Cake\Http\ServerRequest;
 use Cake\Log\Log;
+use Cake\Validation\Validation;
 use lbuchs\WebAuthn\Binary\ByteBuffer;
 use lbuchs\WebAuthn\WebAuthn;
 use lbuchs\WebAuthn\WebAuthnException;
@@ -53,11 +54,16 @@ class WebauthnAuthenticator extends AbstractAuthenticator
     protected function getClient(): WebAuthn
     {
         if (!$this->client) {
-            $this->client = new WebAuthn($this->getConfig('appName'), $this->getConfig('rpId'), $this->getConfig('formats'));
+            $this->client = new WebAuthn(
+                $this->getConfig('appName'),
+                $this->getConfig('rpId'), 
+                $this->getConfig('formats')
+            );
             foreach ($this->getConfig('certificates') as $certificateName) {
                 $this->addRootCertificate($certificateName);
             }
         }
+
         return $this->client;
     }
 
@@ -145,6 +151,8 @@ class WebauthnAuthenticator extends AbstractAuthenticator
                 break;
             }
         }
+        // If we're missing a challenge value in the session or request data,
+        // respond with another challenge.
         $challenge = $request->getSession()->read('Webauthn.challenge');
         if (!$hasData || !$challenge) {
             Log::debug('Missing required request data, or Webauthn.challenge data in session.', 'webauthn');
@@ -153,7 +161,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
             $ids = array_map('base64_decode', $ids);
 
             $deviceTypes = $this->getconfig('deviceTypes');
-            // Prompt for challenge
+            // Get challenge data
             $loginData = $client->getGetArgs(
                 $ids,
                 $this->getConfig('promptTimeout'),
@@ -169,36 +177,48 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         }
 
         // Verify passkey data
-        // TODO Validate that these are strings
-        $id = $request->getData('id', '');
-        $clientData = base64_decode($request->getData('clientData', ''));
-        $authenticator = base64_decode($request->getData('authenticator', ''));
-        $signature = base64_decode($request->getData('signature', ''));
-        $userHandle = base64_decode($request->getData('userHandle', ''));
+        $decoded = [];
+        $keys = $requiredKeys + ['id'];
+        foreach ($keys as $key) {
+            if (!Validation::ascii($data[$key])) {
+                Log::debug("Login failed. Value at $key was not a string.", 'webauthn');
+
+                return new Result(null, Result::FAILURE_CREDENTIALS_INVALID);
+            }
+            // All keys other than id are base64 encoded.
+            if ($key != 'id') {
+                $decoded[$key] = base64_decode($data[$key]);
+            } else {
+                $decoded[$key] = $data[$key];
+            }
+        }
 
         $passkeys = $user->passkeys;
         $found = null;
         foreach ($passkeys as $passkey) {
-            if ($passkey->credential_id == $id) {
+            if ($passkey->credential_id == $decoded['id']) {
                 $found = $passkey;
                 break;
             }
         }
         if (!$found) {
-            Log::debug("Login failed. No passkey with id=$id found.", 'webauthn');
+            Log::debug("Login failed. No passkey with id={$decoded['id']} found.", 'webauthn');
 
             return new Result(null, Result::FAILURE_CREDENTIALS_INVALID);
         }
-        if ($this->getConfig('requireResidentKey') && $userHandle !== $passkey->getUserHandle()) {
+
+        // If we require resident keys ensure the userHandle signature matches.
+        if ($this->getConfig('requireResidentKey') && $decoded['userHandle'] !== $passkey->getUserHandle()) {
             Log::debug('Login failed. Resident key did not match', 'webauthn');
 
             return new Result(null, Result::FAILURE_CREDENTIALS_INVALID);
         }
+
         try {
             $client->processGet(
-                $clientData,
-                $authenticator,
-                $signature,
+                $decoded['clientData'],
+                $decoded['authenticator'],
+                $decoded['signature'],
                 $found->getPublicKey(),
                 $challenge,
                 null,

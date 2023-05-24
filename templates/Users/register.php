@@ -26,18 +26,13 @@ async function completeRegistration(registerData, csrfToken) {
         attestation: arrayBufferToBase64(cred.response.attestationObject),
     };
 
-    var response = await window.fetch("/users/completeRegister", {
+    const response = await sendRequest({
+        url: '/users/completeRegister',
         method: 'POST',
-        body: JSON.stringify(attestationResponse),
-        cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-Token': csrfToken,
-        },
+        data: attestationResponse,
+        csrfToken: csrfToken,
     });
-    var responseData = await response.json();
-
+    const responseData = await response.json();
     if (responseData.success) {
         const messageEl = document.getElementById('register-flash');
         messageEl.innerText = "Successfully registered";
