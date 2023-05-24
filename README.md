@@ -36,12 +36,6 @@ or serve the application directly.
 bin/cake server -p 8765
 ```
 
-Or a PHP webserver & nodejs HTTPS server.
-
-```bash
-nodejs bin/server
-```
-
 ### mkcert & stunnel
 
 Using a pair of CLI utilities you can generate an HTTPs proxy for the cakephp
@@ -64,7 +58,6 @@ Then in one terminal, run: `bin/cake server` and then in another run
 sudo stunnel3 -f -d 443 -r 8765 -p ./localhost-bundle.pem
 ```
 
-
 Lastly you can use hosted services to create SSL tunnels.
 
 ## Configuration
@@ -72,3 +65,19 @@ Lastly you can use hosted services to create SSL tunnels.
 Read and edit the environment specific `config/app_local.php` and set up the
 `'Datasources'` and any other configuration relevant for your application.
 Other environment agnostic settings can be changed in `config/app.php`.
+
+## What's included
+
+A sample application that:
+
+* A CakePHP Authentication plugin compatible Authenticator and high-level API
+  for building passkey based flows.
+* Allows new users to be created using U2F authenticators (also referred to as
+  Passkeys)
+* Allows users to login with their U2F device.
+* Allows a user to register multiple devices.
+
+Still to be built:
+
+- Preventing duplicates passkeys to be added by the same device.
+- Preventing deletion of a user's last passkey.
