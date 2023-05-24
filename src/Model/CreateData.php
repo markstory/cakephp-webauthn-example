@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Model;
 
-use lbuchs\WebAuthn\Binary\ByteBuffer;
 use stdClass;
 
 class CreateData
@@ -15,11 +14,13 @@ class CreateData
         $this->payload = $payload;
     }
 
-    public function getCredentialId() {
+    public function getCredentialId()
+    {
         return base64_encode($this->payload->credentialId);
     }
 
-    public function getPayload() {
+    public function getPayload()
+    {
         $data = (array)$this->payload;
         $data['credentialId'] = base64_encode($data['credentialId']);
 

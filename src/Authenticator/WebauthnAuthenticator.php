@@ -56,7 +56,7 @@ class WebauthnAuthenticator extends AbstractAuthenticator
         if (!$this->client) {
             $this->client = new WebAuthn(
                 $this->getConfig('appName'),
-                $this->getConfig('rpId'), 
+                $this->getConfig('rpId'),
                 $this->getConfig('formats')
             );
             foreach ($this->getConfig('certificates') as $certificateName) {

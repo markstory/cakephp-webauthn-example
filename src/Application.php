@@ -183,7 +183,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
                 'className' => 'Authentication.Orm',
                 'userModel' => 'Users',
                 'finder' => 'login',
-            ]
+            ],
         ]);
 
         return $service;
